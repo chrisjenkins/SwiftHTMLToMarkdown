@@ -133,6 +133,7 @@ public class BasicHTML: HTML {
         } else if node.nodeName() == "li" {
             // List item conversion
             markdown += "- "
+            
             // if node.parentNode()?.nodeName() == "ul" {
             //     markdown += "- "
             // } else if node.parentNode()?.nodeName() == "ol" {
