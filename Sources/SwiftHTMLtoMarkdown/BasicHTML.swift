@@ -6,7 +6,7 @@ public class BasicHTML: HTML {
     public var rawText: String = ""
     public var markdown: String = ""
     var hasSpacedParagraph: Bool = false
-    
+
     public required init() {
         rawHTML = "Document not initialized correctly"
     }
@@ -21,19 +21,19 @@ public class BasicHTML: HTML {
             guard let level = Int(String(last)) else {
                 return
             }
-            
-            for _ in 0..<level {
+
+            for _ in 0 ..< level {
                 markdown += "#"
             }
-            
+
             markdown += " "
-            
+
             for node in node.getChildNodes() {
                 try convertNode(node)
             }
-            
+
             markdown += "\n\n"
-            
+
             return
         } else if node.nodeName() == "p" {
             if hasSpacedParagraph {
@@ -86,14 +86,15 @@ public class BasicHTML: HTML {
             }
 
             let codeNode = node.childNode(0)
-            
+
             if codeNode.nodeName() == "code" {
                 markdown += "```"
-                
+
                 // Try and get the language from the code block
 
                 if let codeClass = try? codeNode.attr("class"),
-                   let match = try? #/lang.*-(\w+)/#.firstMatch(in: codeClass) {
+                   let match = try? #/lang.*-(\w+)/#.firstMatch(in: codeClass)
+                {
                     // match.output.1 is equal to the second capture group.
                     let language = match.output.1
                     markdown += language + "\n"
@@ -101,13 +102,50 @@ public class BasicHTML: HTML {
                     // Add the ending newline that we need to format this correctly.
                     markdown += "\n"
                 }
-                
+
                 for child in codeNode.getChildNodes() {
                     try convertNode(child)
                 }
                 markdown += "\n```"
                 return
             }
+        } else if node.nodeName() == "img" {
+            markdown += "!["
+            let alt = try node.attr("alt")
+            markdown += alt
+            markdown += "]("
+            let src = try node.attr("src")
+            markdown += src
+            markdown += ")"
+        } else if node.nodeName() == "blockquote" {
+            // Blockquote conversion
+            markdown += "> "
+            for child in node.getChildNodes() {
+                try convertNode(child)
+            }
+            markdown += "\n\n"
+        } else if node.nodeName() == "ul" || node.nodeName() == "ol" {
+            // List conversion
+            for child in node.getChildNodes() {
+                try convertNode(child)
+            }
+            markdown += "\n"
+        } else if node.nodeName() == "li" {
+            // List item conversion
+            if node.parentNode()?.nodeName() == "ul" {
+                markdown += "- "
+            } else if node.parentNode()?.nodeName() == "ol" {
+                if let index = node.parent()?.getElementsByTag("li").index(of: node) {
+                    markdown += "\(index + 1). "
+                }
+            }
+            for child in node.getChildNodes() {
+                try convertNode(child)
+            }
+            markdown += "\n"
+        } else if node.nodeName() == "hr" {
+            // Horizontal rule conversion
+            markdown += "\n---\n"
         }
 
         if node.nodeName() == "#text" && node.description != " " {
@@ -118,5 +156,4 @@ public class BasicHTML: HTML {
             try convertNode(node)
         }
     }
-
 }
