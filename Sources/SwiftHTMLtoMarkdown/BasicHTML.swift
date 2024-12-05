@@ -132,13 +132,14 @@ public class BasicHTML: HTML {
             markdown += "\n"
         } else if node.nodeName() == "li" {
             // List item conversion
-            if node.parentNode()?.nodeName() == "ul" {
-                markdown += "- "
-            } else if node.parentNode()?.nodeName() == "ol" {
-                if let index = node.parent()?.getElementsByTag("li").index(of: node) {
-                    markdown += "\(index + 1). "
-                }
-            }
+            markdown += "- "
+            // if node.parentNode()?.nodeName() == "ul" {
+            //     markdown += "- "
+            // } else if node.parentNode()?.nodeName() == "ol" {
+            //     if let index = node.parent()?.getElementsByTag("li").index(of: node) {
+            //         markdown += "\(index + 1). "
+            //     }
+            // }
             for child in node.getChildNodes() {
                 try convertNode(child)
             }
