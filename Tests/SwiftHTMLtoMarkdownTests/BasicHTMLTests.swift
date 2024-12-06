@@ -354,7 +354,7 @@ final class BasicHTMLTests: XCTestCase {
     }
 
     func testFigureImageWithCaption() throws {
-        let raw = "<figure><img srcset=\"https://www.test.com/small.jpg 100w,%20https://www.test.com/medium.jpg 200w,%20https://www.test.com/large.jpg 300w\" alt=\"Alt text\"><figcaption>A caption</figcaption></figure>"
+        let raw = "<figure><img srcset=\"https://www.test.com/small.jpg%20100w,https://www.test.com/medium.jpg%20200w,https://www.test.com/large.jpg 300w\" alt=\"Alt text\"><figcaption>A caption</figcaption></figure>"
 
         let correctOutput = """
 

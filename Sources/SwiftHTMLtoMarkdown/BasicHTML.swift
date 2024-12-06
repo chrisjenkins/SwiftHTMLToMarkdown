@@ -120,9 +120,10 @@ public class BasicHTML: HTML {
                 return
 
             case "img" where parentNode?.nodeName() == "figure":
-                if let srcSet = try? node.attr("srcset"), !srcSet.isEmpty,
-                   let srcPlusWidth = srcSet.removingPercentEncoding?.components(separatedBy: ",").map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).last,
-                   let src = srcPlusWidth.components(separatedBy: " ").first
+                if
+                    let srcSet = try? node.attr("srcset"), !srcSet.isEmpty,
+                    let srcPlusWidth: String = srcSet.components(separatedBy: ",").map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).last,
+                    let src = srcPlusWidth.removingPercentEncoding?.components(separatedBy: " ").first
                 {
                     markdown += "\n"
                     markdown += "!["
