@@ -121,7 +121,7 @@ public class BasicHTML: HTML {
 
             case "img" where parentNode?.nodeName() == "figure":
                 if let srcSet = try? node.attr("srcset"), !srcSet.isEmpty,
-                   let srcPlusWidth = srcSet.components(separatedBy: ",").map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).last,
+                   let srcPlusWidth = srcSet.removingPercentEncoding?.components(separatedBy: ",").map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).last,
                    let src = srcPlusWidth.components(separatedBy: " ").first
                 {
                     markdown += "\n"
