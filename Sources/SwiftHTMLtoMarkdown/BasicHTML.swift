@@ -116,20 +116,43 @@ public class BasicHTML: HTML {
                     return
                 }
 
-            case "img":
+            case "figcaption" where parentNode == nil: // no parent, so convert children
+                break
+
+            case "figcaption": // some other parent, dont convert children
+                return
+
+            case "img" where parentNode?.nodeName() == "figure":
                 if let srcSet = try? node.attr("srcset"), !srcSet.isEmpty,
                    let srcPlusWidth = srcSet.components(separatedBy: ",").map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).last,
                    let src = srcPlusWidth.components(separatedBy: " ").first
                 {
                     markdown += "\n"
                     markdown += "!["
-                    if let alt = try? node.attr("alt").trimmingCharacters(in: .whitespacesAndNewlines), !alt.isEmpty {
+
+                    var didFindCaption = false
+                    if let parentNode {
+                        childLoop: for (idx, child) in parentNode.getChildNodes().enumerated() {
+                            guard child.nodeName() == "figcaption" else { continue }
+                            try convertNode(child, parentNode: nil, index: idx)
+                            didFindCaption = true
+                            break childLoop
+                        }
+                    }
+
+                    if !didFindCaption, let alt = try? node.attr("alt").trimmingCharacters(in: .whitespacesAndNewlines), !alt.isEmpty {
                         markdown += alt
                     }
+
                     markdown += "]("
                     markdown += src
                     markdown += ")"
-                } else if let src = try? node.attr("src"), !src.isEmpty {
+                }
+                markdown += "\n"
+                return
+
+            case "img":
+                if let src = try? node.attr("src"), !src.isEmpty {
                     markdown += "\n"
                     markdown += "!["
                     if let alt = try? node.attr("alt").trimmingCharacters(in: .whitespacesAndNewlines), !alt.isEmpty {
@@ -187,7 +210,7 @@ public class BasicHTML: HTML {
         }
 
         if node.nodeName() == "#text" && node.description != " " {
-            markdown += node.description
+            markdown += node.description.trimmingCharacters(in: .newlines)
         }
 
         for (idx, child) in node.getChildNodes().enumerated() {

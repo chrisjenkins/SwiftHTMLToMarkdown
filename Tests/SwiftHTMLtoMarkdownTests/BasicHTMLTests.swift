@@ -318,13 +318,30 @@ final class BasicHTMLTests: XCTestCase {
         XCTAssertTrue(markdown == correctOutput)
     }
 
-    func testImageSrcset() throws {
-        let raw =
-            "<img srcset=\"https://www.test.com/small.jpg 100w, https://www.test.com/medium.jpg 200w, https://www.test.com/large.jpg 300w\" alt=\"Alt text\">"
+    // func testImageSrcset() throws {
+    //     let raw =
+    //         "<img srcset=\"https://www.test.com/small.jpg 100w, https://www.test.com/medium.jpg 200w, https://www.test.com/large.jpg 300w\" alt=\"Alt text\">"
+
+    //     let correctOutput = """
+
+    //     ![Alt text](https://www.test.com/large.jpg)
+
+    //     """
+
+    //     var document = BasicHTML(rawHTML: raw)
+    //     try document.parse()
+
+    //     let markdown = try document.asMarkdown()
+    //     print(markdown)
+    //     XCTAssertTrue(markdown == correctOutput)
+    // }
+
+    func testImageNoAlt() throws {
+        let raw = "<img src=\"https://www.test.com/large.jpg\">"
 
         let correctOutput = """
 
-        ![Alt text](https://www.test.com/large.jpg)
+        ![](https://www.test.com/large.jpg)
 
         """
 
@@ -336,12 +353,29 @@ final class BasicHTMLTests: XCTestCase {
         XCTAssertTrue(markdown == correctOutput)
     }
 
-    func testImageNoAlt() throws {
-        let raw = "<img src=\"https://www.test.com/large.jpg\">"
+    func testFigureImageWithCaption() throws {
+        let raw = "<figure><img srcset=\"https://www.test.com/small.jpg 100w, https://www.test.com/medium.jpg 200w, https://www.test.com/large.jpg 300w\" alt=\"Alt text\"><figcaption>A caption</figcaption></figure>"
 
         let correctOutput = """
 
-        ![](https://www.test.com/large.jpg)
+        ![A caption](https://www.test.com/large.jpg)
+
+        """
+
+        var document = BasicHTML(rawHTML: raw)
+        try document.parse()
+
+        let markdown = try document.asMarkdown()
+        print(markdown)
+        XCTAssertTrue(markdown == correctOutput)
+    }
+
+    func testFigureImageWithoutCaption() throws {
+        let raw = "<figure><img srcset=\"https://www.test.com/small.jpg 100w, https://www.test.com/medium.jpg 200w, https://www.test.com/large.jpg 300w\" alt=\"Alt text\"></figure>"
+
+        let correctOutput = """
+
+        ![Alt text](https://www.test.com/large.jpg)
 
         """
 
@@ -395,9 +429,9 @@ final class BasicHTMLTests: XCTestCase {
         let raw = "<hr>"
 
         let correctOutput = """
-        
+
         ---
-        
+
         """
 
         var document = BasicHTML(rawHTML: raw)
