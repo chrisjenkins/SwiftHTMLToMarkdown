@@ -120,33 +120,52 @@ public class BasicHTML: HTML {
                 return
 
             case "img" where parentNode?.nodeName() == "figure":
-                if
-                    let srcSet = try? node.attr("srcset"), !srcSet.isEmpty,
-                    let srcPlusWidth: String = srcSet.components(separatedBy: ",").map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).last,
-                    let src = srcPlusWidth.removingPercentEncoding?.components(separatedBy: " ").first
-                {
-                    markdown += "\n"
-                    markdown += "!["
-
-                    var didFindCaption = false
-                    if let parentNode {
-                        for child in parentNode.getChildNodes() where child.nodeName() == "figcaption" {
-                            for grandChild in child.getChildNodes() where grandChild.nodeName() == "#text" && grandChild.description != " " {
-                                markdown += grandChild.description.trimmingCharacters(in: .newlines)
-                            }
-                            didFindCaption = true
-                            break
-                        }
-                    }
-
-                    if !didFindCaption, let alt = try? node.attr("alt").trimmingCharacters(in: .whitespacesAndNewlines), !alt.isEmpty {
-                        markdown += alt
-                    }
-
-                    markdown += "]("
-                    markdown += src
-                    markdown += ")"
+                guard
+                    let srcSet = try? node.attr("srcset"), !srcSet.isEmpty
+                else {
+                    return
                 }
+
+                let srcSetComponents = srcSet
+                    .components(separatedBy: ",")
+                    .compactMap { $0.removingPercentEncoding }
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+                guard
+                    let srcSize = srcSetComponents.last
+                else {
+                    return
+                }
+
+                let srcSizeComponents = srcSize.components(separatedBy: " ")
+
+                guard
+                    let src = srcSizeComponents.first
+                else {
+                    return
+                }
+
+                markdown += "\n"
+                markdown += "!["
+
+                var didFindCaption = false
+                if let parentNode {
+                    for child in parentNode.getChildNodes() where child.nodeName() == "figcaption" {
+                        for grandChild in child.getChildNodes() where grandChild.nodeName() == "#text" && grandChild.description != " " {
+                            markdown += grandChild.description.trimmingCharacters(in: .newlines)
+                        }
+                        didFindCaption = true
+                        break
+                    }
+                }
+
+                if !didFindCaption, let alt = try? node.attr("alt").trimmingCharacters(in: .whitespacesAndNewlines), !alt.isEmpty {
+                    markdown += alt
+                }
+
+                markdown += "]("
+                markdown += src
+                markdown += ")"
                 markdown += "\n"
                 return
 
