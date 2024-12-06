@@ -133,7 +133,7 @@ public class BasicHTML: HTML {
                 markdown += src
                 markdown += ")"
             }
-            return
+            markdown += "\n"
         } else if node.nodeName() == "blockquote" {
             // Blockquote conversion
             markdown += "> "

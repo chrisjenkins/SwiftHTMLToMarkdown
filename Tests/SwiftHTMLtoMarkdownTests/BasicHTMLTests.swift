@@ -284,7 +284,10 @@ final class BasicHTMLTests: XCTestCase {
     func testImage() throws {
         let raw = "<img src=\"https://www.test.com/large.jpg\" alt=\"Alt text\">"
 
-        let correctOutput = "![Alt text](https://www.test.com/large.jpg)"
+        let correctOutput = """
+        ![Alt text](https://www.test.com/large.jpg)
+
+        """
 
         var document = BasicHTML(rawHTML: raw)
         try document.parse()
@@ -293,11 +296,33 @@ final class BasicHTMLTests: XCTestCase {
         print(markdown)
         XCTAssertTrue(markdown == correctOutput)
     }
-    
+
+    func testImageMultiple() throws {
+        let raw =
+            "<img src=\"https://www.test.com/one.jpg\" alt=\"Alt text\"><img src=\"https://www.test.com/two.jpg\" alt=\"Alt text\">"
+
+        let correctOutput = """
+        ![Alt text](https://www.test.com/one.jpg)
+        ![Alt text](https://www.test.com/two.jpg)
+
+        """
+
+        var document = BasicHTML(rawHTML: raw)
+        try document.parse()
+
+        let markdown = try document.asMarkdown()
+        print(markdown)
+        XCTAssertTrue(markdown == correctOutput)
+    }
+
     func testImageSrcset() throws {
-        let raw = "<img srcset=\"https://www.test.com/small.jpg 100w, https://www.test.com/medium.jpg 200w, https://www.test.com/large.jpg 300w\" alt=\"Alt text\">"
+        let raw =
+            "<img srcset=\"https://www.test.com/small.jpg 100w, https://www.test.com/medium.jpg 200w, https://www.test.com/large.jpg 300w\" alt=\"Alt text\">"
 
-        let correctOutput = "![Alt text](https://www.test.com/large.jpg)"
+        let correctOutput = """
+        ![Alt text](https://www.test.com/large.jpg)
+
+        """
 
         var document = BasicHTML(rawHTML: raw)
         try document.parse()
@@ -306,11 +331,14 @@ final class BasicHTMLTests: XCTestCase {
         print(markdown)
         XCTAssertTrue(markdown == correctOutput)
     }
-    
+
     func testImageNoAlt() throws {
         let raw = "<img src=\"https://www.test.com/large.jpg\">"
 
-        let correctOutput = "![https://www.test.com/large.jpg](https://www.test.com/large.jpg)"
+        let correctOutput = """
+        ![https://www.test.com/large.jpg](https://www.test.com/large.jpg)
+
+        """
 
         var document = BasicHTML(rawHTML: raw)
         try document.parse()
