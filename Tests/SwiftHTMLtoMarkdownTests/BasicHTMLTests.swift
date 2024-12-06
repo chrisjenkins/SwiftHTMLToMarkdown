@@ -282,9 +282,35 @@ final class BasicHTMLTests: XCTestCase {
     }
 
     func testImage() throws {
-        let raw = "<img src=\"https://www.test.com/img.png\" alt=\"Alt text\">"
+        let raw = "<img src=\"https://www.test.com/large.jpg\" alt=\"Alt text\">"
 
-        let correctOutput = "![Alt text](https://www.test.com/img.png)"
+        let correctOutput = "![Alt text](https://www.test.com/large.jpg)"
+
+        var document = BasicHTML(rawHTML: raw)
+        try document.parse()
+
+        let markdown = try document.asMarkdown()
+        print(markdown)
+        XCTAssertTrue(markdown == correctOutput)
+    }
+    
+    func testImageSrcset() throws {
+        let raw = "<img srcset=\"https://www.test.com/small.jpg 100w, https://www.test.com/medium.jpg 200w, https://www.test.com/large.jpg 300w\" alt=\"Alt text\">"
+
+        let correctOutput = "![Alt text](https://www.test.com/large.jpg)"
+
+        var document = BasicHTML(rawHTML: raw)
+        try document.parse()
+
+        let markdown = try document.asMarkdown()
+        print(markdown)
+        XCTAssertTrue(markdown == correctOutput)
+    }
+    
+    func testImageNoAlt() throws {
+        let raw = "<img src=\"https://www.test.com/large.jpg\">"
+
+        let correctOutput = "![https://www.test.com/large.jpg](https://www.test.com/large.jpg)"
 
         var document = BasicHTML(rawHTML: raw)
         try document.parse()

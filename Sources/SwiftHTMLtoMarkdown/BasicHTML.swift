@@ -109,13 +109,30 @@ public class BasicHTML: HTML {
                 return
             }
         } else if node.nodeName() == "img" {
-            markdown += "!["
-            let alt = try node.attr("alt")
-            markdown += alt
-            markdown += "]("
-            let src = try node.attr("src")
-            markdown += src
-            markdown += ")"
+            if let srcSet = try? node.attr("srcset"), !srcSet.isEmpty,
+               let srcPlusWidth = srcSet.components(separatedBy: ",").map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) }).last,
+               let src = srcPlusWidth.components(separatedBy: " ").first
+            {
+                markdown += "!["
+                if let alt = try? node.attr("alt"), !alt.isEmpty {
+                    markdown += alt
+                } else {
+                    markdown += src
+                }
+                markdown += "]("
+                markdown += src
+                markdown += ")"
+            } else if let src = try? node.attr("src"), !src.isEmpty {
+                markdown += "!["
+                if let alt = try? node.attr("alt"), !alt.isEmpty {
+                    markdown += alt
+                } else {
+                    markdown += src
+                }
+                markdown += "]("
+                markdown += src
+                markdown += ")"
+            }
             return
         } else if node.nodeName() == "blockquote" {
             // Blockquote conversion
@@ -139,7 +156,7 @@ public class BasicHTML: HTML {
                     try convertNode(child, parentNode: node, index: idx)
                 }
                 markdown += "\n"
-                
+
             } else if parentNode?.nodeName() == "ol" {
                 markdown += "\(index). "
                 for (idx, child) in node.getChildNodes().enumerated() {
