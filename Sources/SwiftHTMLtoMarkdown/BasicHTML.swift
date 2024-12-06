@@ -116,10 +116,7 @@ public class BasicHTML: HTML {
                     return
                 }
 
-            case "figcaption" where parentNode == nil: // no parent, so convert children
-                break
-
-            case "figcaption": // some other parent, dont convert children
+            case "figcaption": // ignore these outside of a figure
                 return
 
             case "img" where parentNode?.nodeName() == "figure":
@@ -132,11 +129,12 @@ public class BasicHTML: HTML {
 
                     var didFindCaption = false
                     if let parentNode {
-                        childLoop: for (idx, child) in parentNode.getChildNodes().enumerated() {
-                            guard child.nodeName() == "figcaption" else { continue }
-                            try convertNode(child, parentNode: nil, index: idx)
+                        for child in parentNode.getChildNodes() where child.nodeName() == "figcaption" {
+                            for grandChild in child.getChildNodes() where grandChild.nodeName() == "#text" && grandChild.description != " " {
+                                markdown += grandChild.description.trimmingCharacters(in: .newlines)
+                            }
                             didFindCaption = true
-                            break childLoop
+                            break
                         }
                     }
 
