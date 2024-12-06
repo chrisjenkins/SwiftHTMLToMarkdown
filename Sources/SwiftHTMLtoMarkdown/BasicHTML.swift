@@ -13,7 +13,7 @@ public class BasicHTML: HTML {
 
     /// Converts the given node into valid Markdown by appending it onto the ``MastodonHTML/markdown`` property.
     /// - Parameter node: The node to convert
-    public func convertNode(_ node: Node) throws {
+    public func convertNode(_ node: Node, parentNode: Node? = nil, index: Int = 0) throws {
         if node.nodeName().starts(with: "h") {
             guard let last = node.nodeName().last else {
                 return
@@ -28,8 +28,8 @@ public class BasicHTML: HTML {
 
             markdown += " "
 
-            for node in node.getChildNodes() {
-                try convertNode(node)
+            for (idx, child) in node.getChildNodes().enumerated() {
+                try convertNode(child, parentNode: node, index: idx)
             }
 
             markdown += "\n\n"
@@ -49,8 +49,8 @@ public class BasicHTML: HTML {
             }
         } else if node.nodeName() == "a" {
             markdown += "["
-            for child in node.getChildNodes() {
-                try convertNode(child)
+            for (idx, child) in node.getChildNodes().enumerated() {
+                try convertNode(child, parentNode: node, index: idx)
             }
             markdown += "]"
 
@@ -59,22 +59,22 @@ public class BasicHTML: HTML {
             return
         } else if node.nodeName() == "strong" {
             markdown += "**"
-            for child in node.getChildNodes() {
-                try convertNode(child)
+            for (idx, child) in node.getChildNodes().enumerated() {
+                try convertNode(child, parentNode: node, index: idx)
             }
             markdown += "**"
             return
         } else if node.nodeName() == "em" {
             markdown += "*"
-            for child in node.getChildNodes() {
-                try convertNode(child)
+            for (idx, child) in node.getChildNodes().enumerated() {
+                try convertNode(child, parentNode: node, index: idx)
             }
             markdown += "*"
             return
-        } else if node.nodeName() == "code" {
+        } else if node.nodeName() == "code" && parentNode?.nodeName() != "pre" {
             markdown += "`"
-            for child in node.getChildNodes() {
-                try convertNode(child)
+            for (idx, child) in node.getChildNodes().enumerated() {
+                try convertNode(child, parentNode: node, index: idx)
             }
             markdown += "`"
             return
@@ -91,7 +91,6 @@ public class BasicHTML: HTML {
                 markdown += "```"
 
                 // Try and get the language from the code block
-
                 if let codeClass = try? codeNode.attr("class"),
                    let match = try? #/lang.*-(\w+)/#.firstMatch(in: codeClass)
                 {
@@ -103,8 +102,8 @@ public class BasicHTML: HTML {
                     markdown += "\n"
                 }
 
-                for child in codeNode.getChildNodes() {
-                    try convertNode(child)
+                for (idx, child) in node.getChildNodes().enumerated() {
+                    try convertNode(child, parentNode: node, index: idx)
                 }
                 markdown += "\n```"
                 return
@@ -117,34 +116,38 @@ public class BasicHTML: HTML {
             let src = try node.attr("src")
             markdown += src
             markdown += ")"
+            return
         } else if node.nodeName() == "blockquote" {
             // Blockquote conversion
             markdown += "> "
-            for child in node.getChildNodes() {
-                try convertNode(child)
+            for (idx, child) in node.getChildNodes().enumerated() {
+                try convertNode(child, parentNode: node, index: idx)
             }
             markdown += "\n\n"
         } else if node.nodeName() == "ul" || node.nodeName() == "ol" {
             // List conversion
-            for child in node.getChildNodes() {
-                try convertNode(child)
+            for (idx, child) in node.getChildNodes().enumerated() {
+                try convertNode(child, parentNode: node, index: idx)
             }
             markdown += "\n"
+            return
         } else if node.nodeName() == "li" {
             // List item conversion
-            markdown += "- "
-            
-            // if node.parentNode()?.nodeName() == "ul" {
-            //     markdown += "- "
-            // } else if node.parentNode()?.nodeName() == "ol" {
-            //     if let index = node.parent()?.getElementsByTag("li").index(of: node) {
-            //         markdown += "\(index + 1). "
-            //     }
-            // }
-            for child in node.getChildNodes() {
-                try convertNode(child)
+            if parentNode?.nodeName() == "ul" {
+                markdown += "- "
+                for (idx, child) in node.getChildNodes().enumerated() {
+                    try convertNode(child, parentNode: node, index: idx)
+                }
+                markdown += "\n"
+                
+            } else if parentNode?.nodeName() == "ol" {
+                markdown += "\(index). "
+                for (idx, child) in node.getChildNodes().enumerated() {
+                    try convertNode(child, parentNode: node, index: idx)
+                }
+                markdown += "\n"
             }
-            markdown += "\n"
+            return // do not parse any further
         } else if node.nodeName() == "hr" {
             // Horizontal rule conversion
             markdown += "\n---\n"
@@ -154,8 +157,8 @@ public class BasicHTML: HTML {
             markdown += node.description
         }
 
-        for node in node.getChildNodes() {
-            try convertNode(node)
+        for (idx, child) in node.getChildNodes().enumerated() {
+            try convertNode(child, parentNode: node, index: idx)
         }
     }
 }

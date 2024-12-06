@@ -6,25 +6,25 @@ public class MastodonHTML: HTML {
     public var document: Document?
     public var rawText: String = ""
     public var markdown: String = ""
-    
+
     public required init() {
         rawHTML = "Document not initialized correctly"
     }
 
     /// Converts the given node into valid Markdown by appending it onto the ``MastodonHTML/markdown`` property.
     /// - Parameter node: The node to convert
-    public func convertNode(_ node: Node) throws {
+    public func convertNode(_ node: Node, parentNode: Node? = nil, index: Int = 0) throws {
         if let className = try? node.attr("class") {
             if className == "invisible" {
                 return
             }
-            
+
             if className == "ellipsis" {
                 // We need to append an ellipses to the end of this class
                 for child in node.getChildNodes() {
                     try convertNode(child)
                 }
-                
+
                 markdown += "…"
                 return
             }
@@ -44,7 +44,7 @@ public class MastodonHTML: HTML {
                 try convertNode(child)
             }
             markdown += "]"
-            
+
             let href = try node.attr("href")
             markdown += "(\(href))"
             return
