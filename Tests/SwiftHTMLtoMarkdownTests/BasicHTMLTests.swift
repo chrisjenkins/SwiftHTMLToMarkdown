@@ -341,7 +341,7 @@ final class BasicHTMLTests: XCTestCase {
 
         let correctOutput = """
 
-        ![https://www.test.com/large.jpg](https://www.test.com/large.jpg)
+        ![](https://www.test.com/large.jpg)
 
         """
 

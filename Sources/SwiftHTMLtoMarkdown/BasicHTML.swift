@@ -123,10 +123,8 @@ public class BasicHTML: HTML {
                 {
                     markdown += "\n"
                     markdown += "!["
-                    if let alt = try? node.attr("alt"), !alt.isEmpty {
+                    if let alt = try? node.attr("alt").trimmingCharacters(in: .whitespacesAndNewlines), !alt.isEmpty {
                         markdown += alt
-                    } else {
-                        markdown += src
                     }
                     markdown += "]("
                     markdown += src
@@ -134,10 +132,8 @@ public class BasicHTML: HTML {
                 } else if let src = try? node.attr("src"), !src.isEmpty {
                     markdown += "\n"
                     markdown += "!["
-                    if let alt = try? node.attr("alt"), !alt.isEmpty {
+                    if let alt = try? node.attr("alt").trimmingCharacters(in: .whitespacesAndNewlines), !alt.isEmpty {
                         markdown += alt
-                    } else {
-                        markdown += src
                     }
                     markdown += "]("
                     markdown += src
