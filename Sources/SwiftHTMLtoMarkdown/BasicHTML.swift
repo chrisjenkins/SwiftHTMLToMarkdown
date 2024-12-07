@@ -115,8 +115,17 @@ public class BasicHTML: HTML {
                     markdown += "\n```"
                     return
                 }
+                
+            case "div" where parentNode?.nodeName() == "figure":
+                for (idx, child) in node.getChildNodes().enumerated() {
+                    try convertNode(child, parentNode: parentNode, index: idx)
+                }
+                return
 
             case "figcaption": // ignore these outside of a figure
+                return
+
+            case "span" where parentNode?.nodeName() == "figure":
                 return
 
             case "img" where parentNode?.nodeName() == "figure":
@@ -178,7 +187,7 @@ public class BasicHTML: HTML {
                         markdown += alt
                     }
                     markdown += "]("
-                    
+
                     let srcSetComponents = src
                         .components(separatedBy: ",")
                         .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -198,7 +207,7 @@ public class BasicHTML: HTML {
                     else {
                         return
                     }
-                    
+
                     markdown += url
                     markdown += ")"
                 }

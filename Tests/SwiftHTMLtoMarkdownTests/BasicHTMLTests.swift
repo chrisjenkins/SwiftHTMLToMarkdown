@@ -354,7 +354,7 @@ final class BasicHTMLTests: XCTestCase {
     }
 
     func testFigureImageWithCaption() throws {
-        let raw = "<figure><img srcset=\"https://www.test.com/small.jpg%20100w,https://www.test.com/medium.jpg%20200w,https://www.test.com/large.jpg%20300w\" alt=\"Alt text\"><figcaption>A caption</figcaption></figure>"
+        let raw = "<figure><div><img srcset=\"https://www.test.com/small.jpg%20100w,https://www.test.com/medium.jpg%20200w,https://www.test.com/large.jpg%20300w\" alt=\"Alt text\"></div><figcaption>A caption</figcaption></figure>"
 
         let correctOutput = """
 
@@ -376,6 +376,23 @@ final class BasicHTMLTests: XCTestCase {
         let correctOutput = """
 
         ![Alt text](https://www.test.com/large.jpg)
+
+        """
+
+        var document = BasicHTML(rawHTML: raw)
+        try document.parse()
+
+        let markdown = try document.asMarkdown()
+        print(markdown)
+        XCTAssertTrue(markdown == correctOutput)
+    }
+    
+    func testFigureImageWithCaptionIgnoringSpan() throws {
+        let raw = "<figure><img srcset=\"https://www.test.com/small.jpg%20100w,https://www.test.com/medium.jpg%20200w,https://www.test.com/large.jpg%20300w\" alt=\"Alt text\"><span>Ignore this</span><figcaption>A caption</figcaption></figure>"
+
+        let correctOutput = """
+
+        ![A caption](https://www.test.com/large.jpg)
 
         """
 
