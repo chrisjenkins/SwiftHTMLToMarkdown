@@ -141,7 +141,7 @@ public class BasicHTML: HTML {
                     .components(separatedBy: " ")
 
                 guard
-                    let src = srcSizeComponents.first
+                    let url = srcSizeComponents.first
                 else {
                     return
                 }
@@ -165,7 +165,7 @@ public class BasicHTML: HTML {
                 }
 
                 markdown += "]("
-                markdown += src
+                markdown += url
                 markdown += ")"
                 markdown += "\n"
                 return
@@ -178,7 +178,28 @@ public class BasicHTML: HTML {
                         markdown += alt
                     }
                     markdown += "]("
-                    markdown += src
+                    
+                    let srcSetComponents = src
+                        .components(separatedBy: ",")
+                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+                    guard
+                        let srcSize = srcSetComponents.last
+                    else {
+                        return
+                    }
+
+                    let srcSizeComponents = srcSize
+                        .replacingOccurrences(of: "%20", with: " ")
+                        .components(separatedBy: " ")
+
+                    guard
+                        let url = srcSizeComponents.first
+                    else {
+                        return
+                    }
+                    
+                    markdown += url
                     markdown += ")"
                 }
                 markdown += "\n"
