@@ -128,7 +128,6 @@ public class BasicHTML: HTML {
 
                 let srcSetComponents = srcSet
                     .components(separatedBy: ",")
-                    .compactMap { $0.removingPercentEncoding }
                     .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
 
                 guard
@@ -137,7 +136,9 @@ public class BasicHTML: HTML {
                     return
                 }
 
-                let srcSizeComponents = srcSize.components(separatedBy: " ")
+                let srcSizeComponents = srcSize
+                    .replacingOccurrences(of: "%20", with: " ")
+                    .components(separatedBy: " ")
 
                 guard
                     let src = srcSizeComponents.first
