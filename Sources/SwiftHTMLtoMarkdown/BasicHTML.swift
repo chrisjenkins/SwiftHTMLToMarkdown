@@ -1,3 +1,4 @@
+import Foundation
 import SwiftSoup
 
 public class BasicHTML: HTML {
@@ -5,6 +6,7 @@ public class BasicHTML: HTML {
     public var document: Document?
     public var rawText: String = ""
     public var markdown: String = ""
+    public var container: Node? = nil
     var hasSpacedParagraph: Bool = false
 
     public required init() {
@@ -16,24 +18,7 @@ public class BasicHTML: HTML {
     public func convertNode(_ node: Node, parentNode: Node? = nil, index: Int = 0) throws {
         switch node.nodeName() {
             case "h1", "h2", "h3", "h4", "h5", "h6":
-                guard let last = node.nodeName().last else {
-                    return
-                }
-                guard let level = Int(String(last)) else {
-                    return
-                }
-
-                for _ in 0 ..< level {
-                    markdown += "#"
-                }
-
-                markdown += " "
-
-                for (idx, child) in node.getChildNodes().enumerated() {
-                    try convertNode(child, parentNode: node, index: idx)
-                }
-
-                markdown += "\n\n"
+                try convertHeadingNode(node)
                 return
 
             case "p":
@@ -52,9 +37,7 @@ public class BasicHTML: HTML {
 
             case "a":
                 markdown += "["
-                for (idx, child) in node.getChildNodes().enumerated() {
-                    try convertNode(child, parentNode: node, index: idx)
-                }
+                try convertChildren(node)
                 markdown += "]"
 
                 let href = try node.attr("href")
@@ -63,25 +46,19 @@ public class BasicHTML: HTML {
 
             case "strong":
                 markdown += "**"
-                for (idx, child) in node.getChildNodes().enumerated() {
-                    try convertNode(child, parentNode: node, index: idx)
-                }
+                try convertChildren(node)
                 markdown += "**"
                 return
 
             case "em":
                 markdown += "*"
-                for (idx, child) in node.getChildNodes().enumerated() {
-                    try convertNode(child, parentNode: node, index: idx)
-                }
+                try convertChildren(node)
                 markdown += "*"
                 return
 
             case "code" where parentNode?.nodeName() != "pre":
                 markdown += "`"
-                for (idx, child) in node.getChildNodes().enumerated() {
-                    try convertNode(child, parentNode: node, index: idx)
-                }
+                try convertChildren(node)
                 markdown += "`"
                 return
 
@@ -93,153 +70,38 @@ public class BasicHTML: HTML {
                 }
 
                 let codeNode = node.childNode(0)
-
                 if codeNode.nodeName() == "code" {
-                    markdown += "```"
-
-                    // Try and get the language from the code block
-                    if let codeClass = try? codeNode.attr("class"),
-                       let match = try? #/lang.*-(\w+)/#.firstMatch(in: codeClass)
-                    {
-                        // match.output.1 is equal to the second capture group.
-                        let language = match.output.1
-                        markdown += language + "\n"
-                    } else {
-                        // Add the ending newline that we need to format this correctly.
-                        markdown += "\n"
-                    }
-
-                    for (idx, child) in node.getChildNodes().enumerated() {
-                        try convertNode(child, parentNode: node, index: idx)
-                    }
-                    markdown += "\n```"
+                    try convertCodeNode(codeNode, parentNode: node)
                     return
                 }
 
-            case "figcaption": // ignore these outside of a figure
+            case "figure":
+                container = node
+
+            case "span" where container?.nodeName() == "figure":
                 return
 
-            case "img" where parentNode?.nodeName() == "figure":
-                guard
-                    let srcSet = try? node.attr("srcset"), !srcSet.isEmpty
-                else {
-                    return
-                }
+            case "figcaption" where container?.nodeName() == "figure": // ignore these outside of a figure
+                return
 
-                let srcSetComponents = srcSet
-                    .components(separatedBy: ",")
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-
-                guard
-                    let srcSize = srcSetComponents.last
-                else {
-                    return
-                }
-
-                let srcSizeComponents = srcSize
-                    .replacingOccurrences(of: "%20", with: " ")
-                    .components(separatedBy: " ")
-
-                guard
-                    let url = srcSizeComponents.first
-                else {
-                    return
-                }
-
-                markdown += "\n"
-                markdown += "!["
-
-                var didFindCaption = false
-                if let parentNode {
-                    for child in parentNode.getChildNodes() where child.nodeName() == "figcaption" {
-                        for grandChild in child.getChildNodes() where grandChild.nodeName() == "#text" && grandChild.description != " " {
-                            markdown += grandChild.description.trimmingCharacters(in: .newlines)
-                        }
-                        didFindCaption = true
-                        break
-                    }
-                }
-
-                if !didFindCaption, let alt = try? node.attr("alt").trimmingCharacters(in: .whitespacesAndNewlines), !alt.isEmpty {
-                    markdown += alt
-                }
-
-                markdown += "]("
-                markdown += url
-                markdown += ")"
-                markdown += "\n"
+            case "img" where container?.nodeName() == "figure":
+                try convertImageContainedInFigureNode(node)
                 return
 
             case "img":
-                if let src = try? node.attr("src"), !src.isEmpty {
-                    markdown += "\n"
-                    markdown += "!["
-                    if let alt = try? node.attr("alt").trimmingCharacters(in: .whitespacesAndNewlines), !alt.isEmpty {
-                        markdown += alt
-                    }
-                    markdown += "]("
-                    
-                    let srcSetComponents = src
-                        .components(separatedBy: ",")
-                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-
-                    guard
-                        let srcSize = srcSetComponents.last
-                    else {
-                        return
-                    }
-
-                    let srcSizeComponents = srcSize
-                        .replacingOccurrences(of: "%20", with: " ")
-                        .components(separatedBy: " ")
-
-                    guard
-                        let url = srcSizeComponents.first
-                    else {
-                        return
-                    }
-                    
-                    markdown += url
-                    markdown += ")"
-                }
-                markdown += "\n"
+                try convertImageNode(node)
+                return
 
             case "blockquote":
-                // Blockquote conversion
-                markdown += "> "
-                for (idx, child) in node.getChildNodes().enumerated() {
-                    try convertNode(child, parentNode: node, index: idx)
-                }
-                markdown += "\n\n"
+                try convertBlockquote(node)
 
             case "ul", "ol":
-                // List conversion
-                for (idx, child) in node.getChildNodes().enumerated() {
-                    try convertNode(child, parentNode: node, index: idx)
-                }
-                markdown += "\n"
+                try convertListNode(node)
                 return
 
             case "li":
-                // List item conversion
-                switch parentNode?.nodeName() {
-                    case "ul":
-                        markdown += "- "
-                        for (idx, child) in node.getChildNodes().enumerated() {
-                            try convertNode(child, parentNode: node, index: idx)
-                        }
-                        markdown += "\n"
-
-                    case "ol":
-                        markdown += "\(index). "
-                        for (idx, child) in node.getChildNodes().enumerated() {
-                            try convertNode(child, parentNode: node, index: idx)
-                        }
-                        markdown += "\n"
-
-                    default: break
-                }
-                return // do not parse any further
+                try convertListItemNode(node, parentNode: parentNode, index: index)
+                return
 
             case "hr":
                 // Horizontal rule conversion
@@ -249,12 +111,164 @@ public class BasicHTML: HTML {
                 break
         }
 
-        if node.nodeName() == "#text" && node.description != " " {
-            markdown += node.description.trimmingCharacters(in: .newlines)
-        }
+        try convertText(node)
+        try convertChildren(node)
+    }
 
+    // MARK: -
+
+    private func convertText(_ node: Node, trimming charSet: CharacterSet = .newlines) throws {
+        if node.nodeName() == "#text" && node.description != " " {
+            markdown += node.description.trimmingCharacters(in: charSet)
+        }
+    }
+
+    private func convertChildren(_ node: Node) throws {
         for (idx, child) in node.getChildNodes().enumerated() {
             try convertNode(child, parentNode: node, index: idx)
         }
+    }
+
+    private func convertBlockquote(_ node: Node) throws {
+        markdown += "> "
+        try convertChildren(node)
+        markdown += "\n\n"
+    }
+
+    private func convertCodeNode(_ node: Node, parentNode _: Node) throws {
+        markdown += "```"
+
+        // Try and get the language from the code block
+        if let codeClass = try? node.attr("class"),
+           let match = try? #/lang.*-(\w+)/#.firstMatch(in: codeClass)
+        {
+            // match.output.1 is equal to the second capture group.
+            let language = match.output.1
+            markdown += language + "\n"
+        } else {
+            // Add the ending newline that we need to format this correctly.
+            markdown += "\n"
+        }
+
+        try convertChildren(node)
+
+        markdown += "\n```"
+    }
+
+    private func convertHeadingNode(_ node: Node) throws {
+        guard let last = node.nodeName().last else {
+            return
+        }
+        guard let level = Int(String(last)) else {
+            return
+        }
+
+        for _ in 0 ..< level {
+            markdown += "#"
+        }
+
+        markdown += " "
+
+        try convertChildren(node)
+
+        markdown += "\n\n"
+    }
+
+    private func convertListItemNode(_ node: Node, parentNode: Node?, index: Int) throws {
+        switch parentNode?.nodeName() {
+            case "ul":
+                markdown += "- "
+                try convertChildren(node)
+                markdown += "\n"
+
+            case "ol":
+                markdown += "\(index). "
+                try convertChildren(node)
+                markdown += "\n"
+
+            default: break
+        }
+    }
+
+    private func convertListNode(_ node: Node) throws {
+        try convertChildren(node)
+        markdown += "\n"
+    }
+
+    private func convertImageNode(_ node: Node) throws {
+        guard
+            let src = try? node.attr("src"),
+            !src.isEmpty,
+            let url = url(from: src)
+        else {
+            return
+        }
+
+        markdown += "\n"
+        markdown += "!["
+        if let alt = try? node.attr("alt").trimmingCharacters(in: .whitespacesAndNewlines), !alt.isEmpty {
+            markdown += alt
+        }
+        markdown += "]("
+        markdown += url
+        markdown += ")"
+        markdown += "\n"
+    }
+
+    private func convertImageContainedInFigureNode(_ node: Node) throws {
+        guard
+            let srcSet = try? node.attr("srcset"),
+            !srcSet.isEmpty,
+            let url = url(from: srcSet)
+        else {
+            return
+        }
+
+        markdown += "\n"
+        markdown += "!["
+
+        var didFindCaption = false
+        if let container {
+            for child in container.getChildNodes() where child.nodeName() == "figcaption" {
+                for grandChild in child.getChildNodes() {
+                    try convertText(grandChild, trimming: .whitespacesAndNewlines)
+                }
+                didFindCaption = true
+                break
+            }
+        }
+
+        if !didFindCaption, let alt = try? node.attr("alt").trimmingCharacters(in: .whitespacesAndNewlines), !alt.isEmpty {
+            markdown += alt
+        }
+
+        markdown += "]("
+        markdown += url
+        markdown += ")"
+        markdown += "\n"
+    }
+
+    private func url(from string: String) -> String? {
+        let srcSetComponents = string
+            .components(separatedBy: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        guard
+            let srcSize = srcSetComponents.last
+        else {
+            return nil
+        }
+
+        let srcSizeComponents = srcSize
+            .replacingOccurrences(of: "%20", with: " ")
+            .components(separatedBy: " ")
+
+        guard
+            let url = srcSizeComponents.first
+        else {
+            return nil
+        }
+
+        return url
     }
 }
