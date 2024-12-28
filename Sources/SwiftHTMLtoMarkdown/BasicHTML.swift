@@ -94,6 +94,7 @@ public class BasicHTML: HTML {
 
             case "blockquote":
                 try convertBlockquote(node)
+                return
 
             case "ul", "ol":
                 try convertListNode(node)

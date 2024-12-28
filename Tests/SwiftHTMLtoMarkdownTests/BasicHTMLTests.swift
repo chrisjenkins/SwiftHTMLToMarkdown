@@ -470,4 +470,29 @@ final class BasicHTMLTests: XCTestCase {
         print(markdown)
         XCTAssertTrue(markdown == correctOutput)
     }
+
+    func testParagraphInsideBlockquote() throws {
+        let raw = """
+                <div>
+                    <blockquote>
+                        <p>
+                            the boundary between science fiction and social reality is an optical illusion
+                        </p>
+                    </blockquote>
+                </div>            
+            """
+
+        let correctOutput = """
+            >  the boundary between science fiction and social reality is an optical illusion 
+
+
+            """
+
+        var document = BasicHTML(rawHTML: raw)
+        try document.parse()
+
+        let markdown = try document.asMarkdown()
+        print(markdown)
+        XCTAssertTrue(markdown == correctOutput)
+    }
 }
