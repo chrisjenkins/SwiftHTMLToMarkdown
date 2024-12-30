@@ -16,6 +16,8 @@ public class BasicHTML: HTML {
     /// Converts the given node into valid Markdown by appending it onto the ``MastodonHTML/markdown`` property.
     /// - Parameter node: The node to convert
     public func convertNode(_ node: Node, parentNode: Node? = nil, index: Int = 0) throws {
+        let charSet: CharacterSet = .newlines
+
         switch node.nodeName() {
             case "h1", "h2", "h3", "h4", "h5", "h6":
                 try convertHeadingNode(node)
@@ -112,7 +114,7 @@ public class BasicHTML: HTML {
                 break
         }
 
-        try convertText(node)
+        try convertText(node, trimming: charSet)
         try convertChildren(node)
     }
 
@@ -131,7 +133,9 @@ public class BasicHTML: HTML {
     }
 
     private func convertBlockquote(_ node: Node) throws {
+        markdown += "\n\n"
         markdown += "> "
+        hasSpacedParagraph = false // prevent the next paragraph from appending multiple line returns
         try convertChildren(node)
         markdown += "\n\n"
     }

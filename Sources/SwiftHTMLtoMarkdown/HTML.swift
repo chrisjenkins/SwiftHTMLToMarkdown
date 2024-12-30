@@ -60,6 +60,6 @@ public extension HTML {
         }
         try convertNode(body)
 
-        return markdown
+        return markdown.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
