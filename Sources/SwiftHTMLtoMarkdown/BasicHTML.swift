@@ -182,22 +182,22 @@ public class BasicHTML: HTML {
     private func convertListItemNode(_ node: Node, parentNode: Node?, index: Int) throws {
         switch parentNode?.nodeName() {
             case "ul":
+                markdown += "\n"
                 markdown += "- "
                 try convertChildren(node)
-                markdown += "\n"
 
             case "ol":
+                markdown += "\n"
                 markdown += "\(index). "
                 try convertChildren(node)
-                markdown += "\n"
 
             default: break
         }
     }
 
     private func convertListNode(_ node: Node) throws {
-        try convertChildren(node)
         markdown += "\n"
+        try convertChildren(node)
     }
 
     private func convertImageNode(_ node: Node) throws {
